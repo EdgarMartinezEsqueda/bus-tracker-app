@@ -4,19 +4,35 @@
   "main": "index.ts",
   "scripts": {
     "start": "expo start",
-    "android": "expo start --android",
-    "ios": "expo start --ios",
-    "web": "expo start --web"
+    "android": "expo run:android",
+    "ios": "expo run:ios",
+    "web": "expo start --web",
+    "prebuild": "expo prebuild --clean",
+    "build:android": "eas build -p android --profile preview"
   },
   "dependencies": {
+    "@expo/metro-runtime": "~6.1.2",
+    "dotenv": "^17.2.4",
     "expo": "~54.0.33",
+    "expo-constants": "^18.0.13",
+    "expo-dev-client": "~6.0.20",
+    "expo-location": "~19.0.8",
     "expo-status-bar": "~3.0.9",
     "react": "19.1.0",
-    "react-native": "0.81.5"
+    "react-dom": "19.1.0",
+    "react-native": "0.81.5",
+    "react-native-maps": "1.20.1",
+    "react-native-svg": "^15.15.2",
+    "react-native-svg-transformer": "^1.5.3",
+    "react-native-web": "^0.21.0"
   },
   "devDependencies": {
+    "@react-native-community/cli": "^14.0.1",
     "@types/react": "~19.1.0",
     "typescript": "~5.9.2"
   },
-  "private": true
+  "private": true,
+  "prettier": {
+    "tabWidth": 2
+  }
 }
