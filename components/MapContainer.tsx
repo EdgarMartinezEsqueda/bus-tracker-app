@@ -1,6 +1,6 @@
 import React from "react";
 import { StyleSheet } from "react-native";
-import MapView, { Marker, Polyline } from "react-native-maps";
+import MapView, { Marker, Polyline, PROVIDER_GOOGLE } from "react-native-maps";
 import { BusStop, MapRegion, Route } from "../types";
 
 interface MapContainerProps {
@@ -39,6 +39,7 @@ const MapContainer: React.FC<MapContainerProps> = ({
       }}
       showsUserLocation={true}
       onRegionChangeComplete={onRegionChangeComplete}
+      provider={PROVIDER_GOOGLE}
     >
       {/* Draw routes */}
       {routes
@@ -56,7 +57,10 @@ const MapContainer: React.FC<MapContainerProps> = ({
       {visibleStops.map((stop) => (
         <Marker
           key={stop.id}
-          coordinate={{ latitude: stop.latitude, longitude: stop.longitude }}
+          coordinate={{
+            latitude: stop.latitude,
+            longitude: stop.longitude,
+          }}
           title={stop.name}
           description={stop.route}
           image={busStopImage}
