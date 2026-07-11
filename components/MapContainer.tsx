@@ -47,8 +47,8 @@ const MapContainer: React.FC<MapContainerProps> = ({
             latitude: stop.latitude,
             longitude: stop.longitude,
           }}
-          title={stop.name}
-          description={stop.route}
+          title={stop.name ?? "Parada de autobús"}
+          description={`Rutas: ${stop.routeCodes.join(", ")}`}
           image={busStopImage}
           tracksViewChanges={false}
         />

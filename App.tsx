@@ -1,24 +1,31 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { StyleSheet, View } from "react-native";
-import busData from "./assets/busDataProcessed.json";
 import MapContainer from "./components/MapContainer";
 import MenuButton from "./components/MenuButton";
 import RouteSelectionModal from "./components/RouteSelectionModal";
 import { MAP_DEFAULT_REGION } from "./constants/map";
+import useBusData from "./hooks/useBusData";
 import useLocationPermission from "./hooks/useLocation";
 import useRouteSelection from "./hooks/useRouteSelection";
-import { BusData, MapRegion } from "./types";
+import { MapRegion } from "./types";
 import { getVisibleStops } from "./utils/mapUtils";
 
-const typedBusData: BusData = busData as BusData;
 const busStopImage = require("./assets/busStop.jpg");
-const allRouteIds = typedBusData.routes.map((r) => r.id);
 
 export default function App() {
   // Solicita el permiso de ubicación (showsUserLocation lo necesita en Android)
   useLocationPermission();
-  const { selectedRoutes, toggleRoute, toggleAll } =
+  const { data } = useBusData();
+
+  const allRouteIds = useMemo(() => data.routes.map((r) => r.id), [data]);
+  const { selectedRoutes, toggleRoute, toggleAll, selectAll } =
     useRouteSelection(allRouteIds);
+
+  // Si llegan datos más frescos con rutas nuevas, se seleccionan todas de nuevo
+  useEffect(() => {
+    selectAll(allRouteIds);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [allRouteIds]);
 
   // State
   const [showMenu, setShowMenu] = useState(false);
@@ -26,20 +33,14 @@ export default function App() {
 
   // Get visible stops based on selected routes and map region
   const visibleStops = useMemo(
-    () =>
-      getVisibleStops(
-        typedBusData.stops,
-        selectedRoutes,
-        typedBusData.routes,
-        mapRegion,
-      ),
-    [selectedRoutes, mapRegion],
+    () => getVisibleStops(data.stops, selectedRoutes, data.routes, mapRegion),
+    [data, selectedRoutes, mapRegion],
   );
 
   return (
     <View style={styles.container}>
       <MapContainer
-        routes={typedBusData.routes}
+        routes={data.routes}
         selectedRoutes={selectedRoutes}
         visibleStops={visibleStops}
         onRegionChangeComplete={setMapRegion}
@@ -50,7 +51,7 @@ export default function App() {
 
       <RouteSelectionModal
         visible={showMenu}
-        routes={typedBusData.routes}
+        routes={data.routes}
         selectedRoutes={selectedRoutes}
         onRouteToggle={toggleRoute}
         onToggleAll={() => toggleAll(allRouteIds)}

@@ -19,10 +19,15 @@ const useRouteSelection = (initialRoutes: string[]) => {
     }
   };
 
+  const selectAll = (allRouteIds: string[]) => {
+    setSelectedRoutes(allRouteIds);
+  };
+
   return {
     selectedRoutes,
     toggleRoute,
     toggleAll,
+    selectAll,
   };
 };
 

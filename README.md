@@ -19,12 +19,20 @@ Este proyecto está construido con **React Native** y utiliza:
 - **react-native-maps** para la visualización del mapa.
 - **Expo** para el desarrollo y construcción de la aplicación.
 
-## Actualizar los datos de rutas
+## Datos de rutas
 
-Los datos crudos (KML de Google My Maps ya parseado a JSON) viven en `data/buses.json`. Para regenerar el archivo que consume la app (`assets/busDataProcessed.json`):
+La **fuente de verdad** es [`data/routes.geojson`](./data/routes.geojson): un GeoJSON con las rutas (LineString) y paradas (Point), con la relación explícita ruta↔parada vía `code`/`routeCodes`.
 
-```bash
-npm run data:build
-```
+La app lo consume en tres niveles (siempre gana el más reciente según `metadata.generatedAt`):
 
-> Este pipeline es temporal: la migración a GeoJSON (editable en geojson.io y consumido de forma remota) lo reemplazará.
+1. Copia embebida (`assets/routes.json`) — funciona sin internet.
+2. Caché local de la última descarga.
+3. Descarga desde GitHub raw — **actualizar una ruta = editar el archivo y hacer push**, sin publicar una nueva versión de la app.
+
+### Para modificar una ruta o parada
+
+1. Abrir `data/routes.geojson` en [geojson.io](https://geojson.io) (o QGIS) y editar visualmente. Para nombrar una parada, editar su `properties.name`.
+2. Correr `npm run data:update` — valida el esquema (detecta si el editor rompió algo), sella `metadata.generatedAt` y sincroniza la copia embebida `assets/routes.json`.
+3. Commit + push a `main`. Los usuarios reciben el cambio al reabrir la app.
+
+> `data/buses.json` y `scripts/buildGeojson.js` son el registro de la migración original (My Maps → KML → GeoJSON) y ya no forman parte del flujo normal.
