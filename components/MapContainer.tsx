@@ -1,42 +1,28 @@
 import React from "react";
 import { StyleSheet } from "react-native";
 import MapView, { Marker, Polyline, PROVIDER_GOOGLE } from "react-native-maps";
+import { MAP_DEFAULT_REGION } from "../constants/map";
 import { BusStop, MapRegion, Route } from "../types";
 
 interface MapContainerProps {
   routes: Route[];
   selectedRoutes: string[];
   visibleStops: BusStop[];
-  userLocation?: { latitude: number; longitude: number };
   onRegionChangeComplete: (region: MapRegion) => void;
   busStopImage: any;
 }
-
-const TEPA_COORDS = {
-  latitude: 20.805857,
-  longitude: -102.748916,
-};
 
 const MapContainer: React.FC<MapContainerProps> = ({
   routes,
   selectedRoutes,
   visibleStops,
-  userLocation,
   onRegionChangeComplete,
   busStopImage,
 }) => {
-  const initialLatitude = userLocation?.latitude || TEPA_COORDS.latitude;
-  const initialLongitude = userLocation?.longitude || TEPA_COORDS.longitude;
-
   return (
     <MapView
       style={styles.map}
-      initialRegion={{
-        latitude: initialLatitude,
-        longitude: initialLongitude,
-        latitudeDelta: 0.1,
-        longitudeDelta: 0.1,
-      }}
+      initialRegion={MAP_DEFAULT_REGION}
       showsUserLocation={true}
       onRegionChangeComplete={onRegionChangeComplete}
       provider={PROVIDER_GOOGLE}
@@ -64,7 +50,7 @@ const MapContainer: React.FC<MapContainerProps> = ({
           title={stop.name}
           description={stop.route}
           image={busStopImage}
-          style={styles.busIcon}
+          tracksViewChanges={false}
         />
       ))}
     </MapView>
@@ -74,10 +60,6 @@ const MapContainer: React.FC<MapContainerProps> = ({
 const styles = StyleSheet.create({
   map: {
     flex: 1,
-  },
-  busIcon: {
-    width: 30,
-    height: 30,
   },
 });
 

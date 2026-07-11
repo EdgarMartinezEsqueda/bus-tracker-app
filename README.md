@@ -18,3 +18,13 @@ Este proyecto está construido con **React Native** y utiliza:
 
 - **react-native-maps** para la visualización del mapa.
 - **Expo** para el desarrollo y construcción de la aplicación.
+
+## Actualizar los datos de rutas
+
+Los datos crudos (KML de Google My Maps ya parseado a JSON) viven en `data/buses.json`. Para regenerar el archivo que consume la app (`assets/busDataProcessed.json`):
+
+```bash
+npm run data:build
+```
+
+> Este pipeline es temporal: la migración a GeoJSON (editable en geojson.io y consumido de forma remota) lo reemplazará.

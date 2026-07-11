@@ -1,24 +1,25 @@
 import * as Location from "expo-location";
 import { useEffect, useState } from "react";
 
-const useLocation = () => {
-  const [location, setLocation] = useState<Location.LocationObjectCoords>();
+/**
+ * Solicita el permiso de ubicación en primer plano.
+ * Sin este permiso, `showsUserLocation` del mapa no muestra nada en Android.
+ */
+const useLocationPermission = () => {
+  const [granted, setGranted] = useState(false);
 
   useEffect(() => {
     (async () => {
       try {
         const { status } = await Location.requestForegroundPermissionsAsync();
-        if (status === "granted") {
-          const loc = await Location.getCurrentPositionAsync({});
-          setLocation(loc.coords);
-        }
+        setGranted(status === "granted");
       } catch (error) {
-        console.error("Error getting location:", error);
+        console.error("Error requesting location permission:", error);
       }
     })();
   }, []);
 
-  return location;
+  return granted;
 };
 
-export default useLocation;
+export default useLocationPermission;
