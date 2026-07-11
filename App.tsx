@@ -7,12 +7,12 @@ import { MAP_DEFAULT_REGION } from "./constants/map";
 import useBusData from "./hooks/useBusData";
 import useLocationPermission from "./hooks/useLocation";
 import useRouteSelection from "./hooks/useRouteSelection";
+import { useTheme } from "./theme";
 import { MapRegion } from "./types";
 import { getVisibleStops } from "./utils/mapUtils";
 
-const busStopImage = require("./assets/busStop.jpg");
-
 export default function App() {
+  const theme = useTheme();
   // Solicita el permiso de ubicación (showsUserLocation lo necesita en Android)
   useLocationPermission();
   const { data } = useBusData();
@@ -38,13 +38,14 @@ export default function App() {
   );
 
   return (
-    <View style={styles.container}>
+    <View
+      style={[styles.container, { backgroundColor: theme.colors.background }]}
+    >
       <MapContainer
         routes={data.routes}
         selectedRoutes={selectedRoutes}
         visibleStops={visibleStops}
         onRegionChangeComplete={setMapRegion}
-        busStopImage={busStopImage}
       />
 
       <MenuButton onPress={() => setShowMenu(true)} />
@@ -64,6 +65,5 @@ export default function App() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#000",
   },
 });

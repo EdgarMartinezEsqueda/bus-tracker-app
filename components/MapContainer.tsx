@@ -1,15 +1,17 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { StyleSheet } from "react-native";
-import MapView, { Marker, Polyline, PROVIDER_GOOGLE } from "react-native-maps";
+import MapView, { Polyline, PROVIDER_GOOGLE } from "react-native-maps";
 import { MAP_DEFAULT_REGION } from "../constants/map";
+import { DARK_MAP_STYLE } from "../constants/mapStyles";
+import { useTheme } from "../theme";
 import { BusStop, MapRegion, Route } from "../types";
+import StopMarker from "./StopMarker";
 
 interface MapContainerProps {
   routes: Route[];
   selectedRoutes: string[];
   visibleStops: BusStop[];
   onRegionChangeComplete: (region: MapRegion) => void;
-  busStopImage: any;
 }
 
 const MapContainer: React.FC<MapContainerProps> = ({
@@ -17,8 +19,29 @@ const MapContainer: React.FC<MapContainerProps> = ({
   selectedRoutes,
   visibleStops,
   onRegionChangeComplete,
-  busStopImage,
 }) => {
+  const theme = useTheme();
+
+  // Color por código de ruta, solo de las rutas seleccionadas: cada parada
+  // toma el color de la primera ruta visible que pasa por ella.
+  const colorByCode = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const route of routes) {
+      if (selectedRoutes.includes(route.id) && !map.has(route.code)) {
+        map.set(route.code, route.color);
+      }
+    }
+    return map;
+  }, [routes, selectedRoutes]);
+
+  const stopColor = (stop: BusStop): string => {
+    for (const code of stop.routeCodes) {
+      const color = colorByCode.get(code);
+      if (color) return color;
+    }
+    return theme.colors.primary;
+  };
+
   return (
     <MapView
       style={styles.map}
@@ -26,6 +49,8 @@ const MapContainer: React.FC<MapContainerProps> = ({
       showsUserLocation={true}
       onRegionChangeComplete={onRegionChangeComplete}
       provider={PROVIDER_GOOGLE}
+      customMapStyle={theme.dark ? DARK_MAP_STYLE : []}
+      toolbarEnabled={false}
     >
       {/* Draw routes */}
       {routes
@@ -41,17 +66,7 @@ const MapContainer: React.FC<MapContainerProps> = ({
 
       {/* Show only visible stops */}
       {visibleStops.map((stop) => (
-        <Marker
-          key={stop.id}
-          coordinate={{
-            latitude: stop.latitude,
-            longitude: stop.longitude,
-          }}
-          title={stop.name ?? "Parada de autobús"}
-          description={`Rutas: ${stop.routeCodes.join(", ")}`}
-          image={busStopImage}
-          tracksViewChanges={false}
-        />
+        <StopMarker key={stop.id} stop={stop} color={stopColor(stop)} />
       ))}
     </MapView>
   );

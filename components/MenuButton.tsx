@@ -1,30 +1,37 @@
+import { Menu } from "lucide-react-native";
 import React from "react";
-import { StyleSheet, Text, TouchableOpacity } from "react-native";
+import { StyleSheet, TouchableOpacity } from "react-native";
+import { useTheme } from "../theme";
 
 interface MenuButtonProps {
   onPress: () => void;
 }
 
 const MenuButton: React.FC<MenuButtonProps> = ({ onPress }) => {
+  const theme = useTheme();
+
   return (
-    <TouchableOpacity style={styles.menuButton} onPress={onPress}>
-      <Text style={styles.menuIcon}>≡</Text>
+    <TouchableOpacity
+      style={[styles.menuButton, { backgroundColor: theme.colors.surface }]}
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel="Seleccionar rutas"
+    >
+      <Menu size={24} color={theme.colors.text} strokeWidth={2.5} />
     </TouchableOpacity>
   );
 };
 
 const MENU_BUTTON_SIZE = 50;
-const MENU_BUTTON_BORDER_RADIUS = 25;
 
 const styles = StyleSheet.create({
   menuButton: {
     position: "absolute",
     top: 50,
     left: 20,
-    backgroundColor: "white",
     width: MENU_BUTTON_SIZE,
     height: MENU_BUTTON_SIZE,
-    borderRadius: MENU_BUTTON_BORDER_RADIUS,
+    borderRadius: MENU_BUTTON_SIZE / 2,
     justifyContent: "center",
     alignItems: "center",
     shadowColor: "#000",
@@ -32,10 +39,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.25,
     shadowRadius: 3.84,
     elevation: 5,
-  },
-  menuIcon: {
-    fontSize: 24,
-    fontWeight: "bold",
   },
 });
 

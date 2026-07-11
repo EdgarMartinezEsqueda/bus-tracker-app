@@ -1,12 +1,14 @@
+import { X } from "lucide-react-native";
 import React from "react";
 import {
-    Modal,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  Modal,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
+import { useTheme } from "../theme";
 import { Route } from "../types";
 import RouteItem from "./RouteItem";
 
@@ -27,6 +29,7 @@ const RouteSelectionModal: React.FC<RouteSelectionModalProps> = ({
   onToggleAll,
   onClose,
 }) => {
+  const theme = useTheme();
   const allRoutesSelected = selectedRoutes.length === routes.length;
 
   return (
@@ -36,28 +39,67 @@ const RouteSelectionModal: React.FC<RouteSelectionModalProps> = ({
       transparent={true}
       onRequestClose={onClose}
     >
-      <View style={styles.modalOverlay}>
-        <View style={styles.modalContent}>
+      <View
+        style={[styles.modalOverlay, { backgroundColor: theme.colors.overlay }]}
+      >
+        <View
+          style={[
+            styles.modalContent,
+            {
+              backgroundColor: theme.colors.surface,
+              borderTopLeftRadius: theme.radii.lg,
+              borderTopRightRadius: theme.radii.lg,
+            },
+          ]}
+        >
           {/* Header */}
-          <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle}>Seleccionar Rutas</Text>
-            <TouchableOpacity onPress={onClose}>
-              <Text style={styles.closeButton}>×</Text>
+          <View
+            style={[
+              styles.modalHeader,
+              {
+                padding: theme.spacing.lg,
+                borderBottomColor: theme.colors.border,
+              },
+            ]}
+          >
+            <Text style={[theme.typography.title, { color: theme.colors.text }]}>
+              Seleccionar Rutas
+            </Text>
+            <TouchableOpacity
+              onPress={onClose}
+              accessibilityRole="button"
+              accessibilityLabel="Cerrar"
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            >
+              <X size={24} color={theme.colors.textMuted} />
             </TouchableOpacity>
           </View>
 
           {/* Toggle All Button */}
           <TouchableOpacity
-            style={styles.toggleAllButton}
+            style={[
+              styles.toggleAllButton,
+              {
+                margin: theme.spacing.md,
+                padding: theme.spacing.sm + theme.spacing.xs,
+                backgroundColor: theme.colors.surfaceAlt,
+                borderRadius: theme.radii.sm,
+              },
+            ]}
             onPress={onToggleAll}
+            accessibilityRole="button"
           >
-            <Text style={styles.toggleAllText}>
+            <Text
+              style={[theme.typography.subtitle, { color: theme.colors.text }]}
+            >
               {allRoutesSelected ? "Deseleccionar Todas" : "Seleccionar Todas"}
             </Text>
           </TouchableOpacity>
 
           {/* Routes List */}
-          <ScrollView style={styles.routeList}>
+          <ScrollView
+            style={{ paddingHorizontal: theme.spacing.md }}
+          >
             {routes.map((route) => (
               <RouteItem
                 key={route.id}
@@ -78,13 +120,9 @@ const RouteSelectionModal: React.FC<RouteSelectionModalProps> = ({
 const styles = StyleSheet.create({
   modalOverlay: {
     flex: 1,
-    backgroundColor: "rgba(0,0,0,0.5)",
     justifyContent: "flex-end",
   },
   modalContent: {
-    backgroundColor: "white",
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
     maxHeight: "90%",
     paddingBottom: 20,
   },
@@ -92,31 +130,10 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    padding: 20,
     borderBottomWidth: 1,
-    borderBottomColor: "#eee",
-  },
-  modalTitle: {
-    fontSize: 20,
-    fontWeight: "bold",
-  },
-  closeButton: {
-    fontSize: 28,
-    color: "#999",
   },
   toggleAllButton: {
-    margin: 15,
-    padding: 12,
-    backgroundColor: "#f0f0f0",
-    borderRadius: 8,
     alignItems: "center",
-  },
-  toggleAllText: {
-    fontSize: 16,
-    fontWeight: "600",
-  },
-  routeList: {
-    paddingHorizontal: 15,
   },
 });
 
