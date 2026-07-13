@@ -1,11 +1,11 @@
 import * as Location from "expo-location";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 /**
- * Solicita el permiso de ubicación en primer plano.
- * Sin este permiso, `showsUserLocation` del mapa no muestra nada en Android.
+ * Permiso de ubicación + posición bajo demanda.
+ * Sin el permiso, `showsUserLocation` del mapa no muestra nada en Android.
  */
-const useLocationPermission = () => {
+const useLocation = () => {
   const [granted, setGranted] = useState(false);
 
   useEffect(() => {
@@ -19,7 +19,22 @@ const useLocationPermission = () => {
     })();
   }, []);
 
-  return granted;
+  /** Posición actual, o null si no hay permiso o falla el GPS. */
+  const getPosition =
+    useCallback(async (): Promise<Location.LocationObjectCoords | null> => {
+      try {
+        const { status } = await Location.requestForegroundPermissionsAsync();
+        if (status !== "granted") return null;
+        const location = await Location.getCurrentPositionAsync({
+          accuracy: Location.Accuracy.Balanced,
+        });
+        return location.coords;
+      } catch {
+        return null;
+      }
+    }, []);
+
+  return { granted, getPosition };
 };
 
-export default useLocationPermission;
+export default useLocation;

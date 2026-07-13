@@ -36,3 +36,16 @@ La app lo consume en tres niveles (siempre gana el más reciente según `metadat
 3. Commit + push a `main`. Los usuarios reciben el cambio al reabrir la app.
 
 > `data/buses.json` y `scripts/buildGeojson.js` son el registro de la migración original (My Maps → KML → GeoJSON) y ya no forman parte del flujo normal.
+
+## Desarrollo
+
+```bash
+npm run android        # compila el APK de debug y lo instala en el dispositivo/emulador
+npx expo start --dev-client   # solo el servidor Metro (si la app ya está instalada)
+```
+
+### Problemas conocidos (Windows)
+
+- **"SocketTimeoutException" / "failed to connect to /10.0.2.2"** al cargar el proyecto: el emulador no alcanza a Metro. Verificar que Metro esté corriendo y crear el túnel: `adb reverse tcp:8081 tcp:8081` (adb vive en `%LOCALAPPDATA%\Android\Sdk\platform-tools`). En el dev launcher, conectarse a `http://localhost:8081`.
+- **"Filename longer than 260 characters"** al compilar: límite `MAX_PATH` de Windows en los intermediarios C++. Ya está mitigado en `android/app/build.gradle` con `externalNativeBuild.cmake.buildStagingDirectory "C:/rncxx/tepabuses"`. **Si se corre `expo prebuild --clean`, ese bloque se pierde y hay que reaplicarlo.**
+- Tras instalar/quitar dependencias con código nativo, siempre reconstruir el APK (`npm run android`); el Fast Refresh solo cubre JavaScript.

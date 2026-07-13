@@ -1,72 +1,75 @@
-import React, { useMemo } from "react";
+import React from "react";
 import { StyleSheet } from "react-native";
 import MapView, { Polyline, PROVIDER_GOOGLE } from "react-native-maps";
 import { MAP_DEFAULT_REGION } from "../constants/map";
 import { DARK_MAP_STYLE } from "../constants/mapStyles";
 import { useTheme } from "../theme";
 import { BusStop, MapRegion, Route } from "../types";
+import DirectionArrows from "./DirectionArrows";
 import StopMarker from "./StopMarker";
 
 interface MapContainerProps {
+  mapRef: React.RefObject<MapView | null>;
   routes: Route[];
-  selectedRoutes: string[];
+  selectedRoute: Route | null;
   visibleStops: BusStop[];
   onRegionChangeComplete: (region: MapRegion) => void;
+  onSelectRoute: (routeId: string) => void;
 }
 
 const MapContainer: React.FC<MapContainerProps> = ({
+  mapRef,
   routes,
-  selectedRoutes,
+  selectedRoute,
   visibleStops,
   onRegionChangeComplete,
+  onSelectRoute,
 }) => {
   const theme = useTheme();
-
-  // Color por código de ruta, solo de las rutas seleccionadas: cada parada
-  // toma el color de la primera ruta visible que pasa por ella.
-  const colorByCode = useMemo(() => {
-    const map = new Map<string, string>();
-    for (const route of routes) {
-      if (selectedRoutes.includes(route.id) && !map.has(route.code)) {
-        map.set(route.code, route.color);
-      }
-    }
-    return map;
-  }, [routes, selectedRoutes]);
-
-  const stopColor = (stop: BusStop): string => {
-    for (const code of stop.routeCodes) {
-      const color = colorByCode.get(code);
-      if (color) return color;
-    }
-    return theme.colors.primary;
-  };
+  const mutedStroke = theme.dark ? "#4B5563" : "#C7CDD6";
 
   return (
     <MapView
+      ref={mapRef}
       style={styles.map}
       initialRegion={MAP_DEFAULT_REGION}
       showsUserLocation={true}
+      showsMyLocationButton={false}
       onRegionChangeComplete={onRegionChangeComplete}
       provider={PROVIDER_GOOGLE}
       customMapStyle={theme.dark ? DARK_MAP_STYLE : []}
       toolbarEnabled={false}
+      mapPadding={{ top: 0, right: 0, bottom: 96, left: 0 }}
     >
-      {/* Draw routes */}
-      {routes
-        .filter((route) => selectedRoutes.includes(route.id))
-        .map((route) => (
+      {/* Rutas: sin selección todas con su color; con selección, la elegida
+          resaltada y el resto atenuado (pero tocable para cambiar de ruta) */}
+      {routes.map((route) => {
+        const isSelected = route.id === selectedRoute?.id;
+        return (
           <Polyline
             key={route.id}
             coordinates={route.coordinates}
-            strokeColor={route.color}
-            strokeWidth={3}
+            strokeColor={
+              !selectedRoute || isSelected ? route.color : mutedStroke
+            }
+            strokeWidth={isSelected ? 5 : selectedRoute ? 2 : 3}
+            zIndex={isSelected ? 1 : 0}
+            tappable={true}
+            onPress={() => onSelectRoute(route.id)}
           />
-        ))}
+        );
+      })}
 
-      {/* Show only visible stops */}
+      {/* Sentido del recorrido de la ruta seleccionada */}
+      {selectedRoute && <DirectionArrows route={selectedRoute} />}
+
+      {/* Paradas de la ruta seleccionada (filtradas por zoom y viewport) */}
       {visibleStops.map((stop) => (
-        <StopMarker key={stop.id} stop={stop} color={stopColor(stop)} />
+        <StopMarker
+          key={stop.id}
+          stop={stop}
+          color={selectedRoute?.color ?? theme.colors.primary}
+        />
       ))}
     </MapView>
   );
