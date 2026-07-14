@@ -25,7 +25,7 @@ export const parseBusData = (collection: RouteCollection): BusData => {
 
   for (const feature of collection.features) {
     if (isRouteFeature(feature)) {
-      const { code, name, variant, direction, headsign, color } =
+      const { code, name, variant, direction, headsign, color, zone } =
         feature.properties;
       data.routes.push({
         id: feature.id,
@@ -35,6 +35,7 @@ export const parseBusData = (collection: RouteCollection): BusData => {
         direction,
         headsign,
         color,
+        zone: zone ?? null,
         coordinates: feature.geometry.coordinates.map(([lng, lat]) => ({
           latitude: lat,
           longitude: lng,

@@ -8,7 +8,18 @@ export interface Route {
   direction: RouteDirection | null;
   headsign: string | null; // destino, p. ej. "Hacienda Popotes"
   color: string;
+  zone: string | null; // "Centro", "Norte"… para filtros
   coordinates: Array<{ latitude: number; longitude: number }>;
+}
+
+/** Rutas con el mismo código (ida/vuelta/ramales) presentadas como una sola. */
+export interface RouteGroup {
+  code: string;
+  name: string; // "Central — Hacienda Popotes" o "Ruta C02"
+  color: string;
+  zone: string | null;
+  variants: Route[];
+  stopsCount: number;
 }
 
 export interface BusStop {
@@ -45,6 +56,7 @@ export interface RouteFeature {
     direction: RouteDirection | null;
     headsign: string | null;
     color: string;
+    zone?: string | null;
   };
   geometry: { type: "LineString"; coordinates: [number, number][] };
 }

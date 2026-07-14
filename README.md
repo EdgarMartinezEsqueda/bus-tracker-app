@@ -37,6 +37,42 @@ La app lo consume en tres niveles (siempre gana el más reciente según `metadat
 
 > `data/buses.json` y `scripts/buildGeojson.js` son el registro de la migración original (My Maps → KML → GeoJSON) y ya no forman parte del flujo normal.
 
+## Reportes anónimos (Supabase)
+
+La pestaña **Reportar** envía reportes anónimos a una tabla de Supabase vía REST (sin SDK). Configuración única:
+
+1. En el [dashboard de Supabase](https://supabase.com/dashboard), crear un proyecto y abrir **SQL Editor**, pegar y correr:
+
+```sql
+create table public.reports (
+  id uuid primary key default gen_random_uuid(),
+  created_at timestamptz not null default now(),
+  type text not null check (type in (
+    'parada_incorrecta','parada_faltante','ruta_modificada',
+    'recorrido_incorrecto','comentario'
+  )),
+  route_code text,
+  description text check (char_length(description) <= 1000)
+);
+
+alter table public.reports enable row level security;
+
+-- El rol anónimo SOLO puede insertar; nadie puede leer con la anon key
+create policy "anon insert reports"
+  on public.reports for insert to anon with check (true);
+```
+
+2. En **Settings → API**, copiar la *Project URL* y la *anon public key* al `.env`:
+
+```
+EXPO_PUBLIC_SUPABASE_URL=https://xxxx.supabase.co
+EXPO_PUBLIC_SUPABASE_ANON_KEY=eyJ...
+```
+
+3. Reiniciar Metro. Los reportes se leen en el dashboard: **Table Editor → reports**.
+
+> Sin estas variables la app funciona igual; solo el envío de reportes muestra "no disponible".
+
 ## Desarrollo
 
 ```bash

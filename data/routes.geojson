@@ -3,7 +3,7 @@
   "metadata": {
     "name": "Rutas de transporte público de Tepatitlán de Morelos, Jalisco",
     "schemaVersion": 1,
-    "generatedAt": "2026-07-11T04:41:20.292Z"
+    "generatedAt": "2026-07-13T23:54:04.402Z"
   },
   "features": [
     {
@@ -16,7 +16,8 @@
         "variant": null,
         "direction": "ida",
         "headsign": "Hacienda Popotes",
-        "color": "#880E4F"
+        "color": "#880E4F",
+        "zone": "Poniente"
       },
       "geometry": {
         "type": "LineString",
@@ -222,7 +223,8 @@
         "variant": null,
         "direction": "vuelta",
         "headsign": "Central",
-        "color": "#A52714"
+        "color": "#A52714",
+        "zone": "Poniente"
       },
       "geometry": {
         "type": "LineString",
@@ -360,7 +362,8 @@
         "variant": null,
         "direction": null,
         "headsign": null,
-        "color": "#CE93D8"
+        "color": "#CE93D8",
+        "zone": "Poniente"
       },
       "geometry": {
         "type": "LineString",
@@ -710,7 +713,8 @@
         "variant": null,
         "direction": "vuelta",
         "headsign": "Lomas del Carmen",
-        "color": "#FF5252"
+        "color": "#FF5252",
+        "zone": "Centro"
       },
       "geometry": {
         "type": "LineString",
@@ -1008,7 +1012,8 @@
         "variant": null,
         "direction": null,
         "headsign": "Penal",
-        "color": "#F57C00"
+        "color": "#F57C00",
+        "zone": "Centro"
       },
       "geometry": {
         "type": "LineString",
@@ -1122,7 +1127,8 @@
         "variant": null,
         "direction": "ida",
         "headsign": "Los Viveros",
-        "color": "#FBC02D"
+        "color": "#FBC02D",
+        "zone": "Centro"
       },
       "geometry": {
         "type": "LineString",
@@ -1356,7 +1362,8 @@
         "variant": null,
         "direction": "ida",
         "headsign": "Adobes",
-        "color": "#FFD600"
+        "color": "#FFD600",
+        "zone": "Centro"
       },
       "geometry": {
         "type": "LineString",
@@ -1794,7 +1801,8 @@
         "variant": null,
         "direction": "vuelta",
         "headsign": "juan Pablo II",
-        "color": "#817717"
+        "color": "#817717",
+        "zone": "Centro"
       },
       "geometry": {
         "type": "LineString",
@@ -2404,7 +2412,8 @@
         "variant": null,
         "direction": "ida",
         "headsign": "Adobes",
-        "color": "#558B2F"
+        "color": "#558B2F",
+        "zone": "Norte"
       },
       "geometry": {
         "type": "LineString",
@@ -2682,7 +2691,8 @@
         "variant": null,
         "direction": "vuelta",
         "headsign": "Hospital Gral. de Zona N.21",
-        "color": "#097138"
+        "color": "#097138",
+        "zone": "Norte"
       },
       "geometry": {
         "type": "LineString",
@@ -2932,7 +2942,8 @@
         "variant": "La Villa",
         "direction": "ida",
         "headsign": null,
-        "color": "#006064"
+        "color": "#006064",
+        "zone": "Norte"
       },
       "geometry": {
         "type": "LineString",
@@ -3030,7 +3041,8 @@
         "variant": "La Villa",
         "direction": "vuelta",
         "headsign": null,
-        "color": "#01579B"
+        "color": "#01579B",
+        "zone": "Norte"
       },
       "geometry": {
         "type": "LineString",
@@ -3104,7 +3116,8 @@
         "variant": "Los Sauces",
         "direction": "ida",
         "headsign": null,
-        "color": "#1A237E"
+        "color": "#1A237E",
+        "zone": "Norte"
       },
       "geometry": {
         "type": "LineString",
@@ -3182,7 +3195,8 @@
         "variant": "Los Sauces",
         "direction": "vuelta",
         "headsign": null,
-        "color": "#673AB7"
+        "color": "#673AB7",
+        "zone": "Norte"
       },
       "geometry": {
         "type": "LineString",
@@ -3256,7 +3270,8 @@
         "variant": null,
         "direction": "ida",
         "headsign": "Hospital Santa Fé",
-        "color": "#87CEAC"
+        "color": "#87CEAC",
+        "zone": "Poniente"
       },
       "geometry": {
         "type": "LineString",
@@ -3498,7 +3513,8 @@
         "variant": null,
         "direction": "vuelta",
         "headsign": "El Tablón",
-        "color": "#F48FB1"
+        "color": "#F48FB1",
+        "zone": "Poniente"
       },
       "geometry": {
         "type": "LineString",

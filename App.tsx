@@ -1,10 +1,13 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { BackHandler, StyleSheet, View } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import MapView from "react-native-maps";
+import { SafeAreaProvider } from "react-native-safe-area-context";
 import LocateButton from "./components/LocateButton";
 import MapContainer from "./components/MapContainer";
 import RouteSheet from "./components/RouteSheet";
+import SearchPill from "./components/SearchPill";
+import TabBar, { TabKey } from "./components/TabBar";
 import {
   LOCATE_REGION_DELTA,
   MAP_DEFAULT_REGION,
@@ -12,9 +15,13 @@ import {
 } from "./constants/map";
 import useBusData from "./hooks/useBusData";
 import useLocation from "./hooks/useLocation";
+import AboutScreen from "./screens/AboutScreen";
+import ReportScreen from "./screens/ReportScreen";
+import SearchScreen from "./screens/SearchScreen";
 import { useTheme } from "./theme";
 import { MapRegion } from "./types";
 import { getVisibleStops } from "./utils/mapUtils";
+import { buildRouteGroups } from "./utils/routeGroups";
 
 // Margen al encuadrar una ruta: el inferior deja espacio al bottom sheet
 const FIT_ROUTE_PADDING = { top: 100, right: 60, bottom: 220, left: 60 };
@@ -25,23 +32,55 @@ export default function App() {
   const { data } = useBusData();
 
   const mapRef = useRef<MapView>(null);
+  const [activeTab, setActiveTab] = useState<TabKey>("inicio");
+  const [selectedGroupCode, setSelectedGroupCode] = useState<string | null>(
+    null,
+  );
   const [selectedRouteId, setSelectedRouteId] = useState<string | null>(null);
   const [mapRegion, setMapRegion] = useState<MapRegion>(MAP_DEFAULT_REGION);
+
+  const groups = useMemo(
+    () => buildRouteGroups(data.routes, data.stops),
+    [data],
+  );
+
+  const selectedGroup = useMemo(
+    () => groups.find((g) => g.code === selectedGroupCode) ?? null,
+    [groups, selectedGroupCode],
+  );
 
   const selectedRoute = useMemo(
     () => data.routes.find((r) => r.id === selectedRouteId) ?? null,
     [data, selectedRouteId],
   );
 
-  const stopsCountByCode = useMemo(() => {
-    const counts = new Map<string, number>();
-    for (const stop of data.stops) {
-      for (const code of stop.routeCodes) {
-        counts.set(code, (counts.get(code) ?? 0) + 1);
-      }
-    }
-    return counts;
-  }, [data]);
+  // Elegir grupo = elegir su primera variante; también desde Buscar
+  const handleSelectGroup = useCallback(
+    (code: string) => {
+      const group = groups.find((g) => g.code === code);
+      if (!group) return;
+      setSelectedGroupCode(code);
+      setSelectedRouteId(group.variants[0].id);
+      setActiveTab("inicio");
+    },
+    [groups],
+  );
+
+  const clearSelection = useCallback(() => {
+    setSelectedGroupCode(null);
+    setSelectedRouteId(null);
+  }, []);
+
+  // Tocar una línea del mapa selecciona su grupo y esa variante exacta
+  const handleSelectRouteFromMap = useCallback(
+    (routeId: string) => {
+      const route = data.routes.find((r) => r.id === routeId);
+      if (!route) return;
+      setSelectedGroupCode(route.code);
+      setSelectedRouteId(route.id);
+    },
+    [data],
+  );
 
   // Paradas de la ruta seleccionada, visibles solo con zoom suficiente
   const visibleStops = useMemo(() => {
@@ -53,28 +92,35 @@ export default function App() {
     return getVisibleStops(routeStops, mapRegion);
   }, [data, selectedRoute, mapRegion]);
 
-  // Encuadrar la ruta seleccionada con animación
+  // Encuadrar la variante seleccionada con animación
   useEffect(() => {
-    if (selectedRoute) {
+    if (selectedRoute && activeTab === "inicio") {
       mapRef.current?.fitToCoordinates(selectedRoute.coordinates, {
         edgePadding: FIT_ROUTE_PADDING,
         animated: true,
       });
     }
-  }, [selectedRoute]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedRoute?.id, activeTab]);
 
-  // Botón atrás de Android: primero cierra el detalle de ruta
+  // Botón atrás: sale de la pestaña actual, luego cierra el detalle
   useEffect(() => {
-    if (!selectedRouteId) return;
     const subscription = BackHandler.addEventListener(
       "hardwareBackPress",
       () => {
-        setSelectedRouteId(null);
-        return true;
+        if (activeTab !== "inicio") {
+          setActiveTab("inicio");
+          return true;
+        }
+        if (selectedGroupCode) {
+          clearSelection();
+          return true;
+        }
+        return false;
       },
     );
     return () => subscription.remove();
-  }, [selectedRouteId]);
+  }, [activeTab, selectedGroupCode, clearSelection]);
 
   const handleLocate = async () => {
     const coords = await getPosition();
@@ -92,35 +138,73 @@ export default function App() {
   };
 
   return (
-    <GestureHandlerRootView style={styles.root}>
-      <View
-        style={[styles.root, { backgroundColor: theme.colors.background }]}
-      >
-        <MapContainer
-          mapRef={mapRef}
-          routes={data.routes}
-          selectedRoute={selectedRoute}
-          visibleStops={visibleStops}
-          onRegionChangeComplete={setMapRegion}
-          onSelectRoute={setSelectedRouteId}
-        />
+    <SafeAreaProvider>
+      <GestureHandlerRootView style={styles.root}>
+        <View
+          style={[styles.root, { backgroundColor: theme.colors.background }]}
+        >
+          {/* Área de contenido (mapa + sheet, con overlays por pestaña) */}
+          <View style={styles.content}>
+            <MapContainer
+              mapRef={mapRef}
+              routes={data.routes}
+              selectedRoute={selectedRoute}
+              visibleStops={visibleStops}
+              onRegionChangeComplete={setMapRegion}
+              onSelectRoute={handleSelectRouteFromMap}
+            />
 
-        <LocateButton onPress={handleLocate} />
+            <SearchPill onPress={() => setActiveTab("buscar")} />
+            <LocateButton onPress={handleLocate} />
 
-        <RouteSheet
-          routes={data.routes}
-          selectedRoute={selectedRoute}
-          stopsCountByCode={stopsCountByCode}
-          onSelectRoute={setSelectedRouteId}
-          onClose={() => setSelectedRouteId(null)}
-        />
-      </View>
-    </GestureHandlerRootView>
+            <RouteSheet
+              groups={groups}
+              selectedGroup={selectedGroup}
+              selectedRoute={selectedRoute}
+              onSelectGroup={handleSelectGroup}
+              onSelectVariant={setSelectedRouteId}
+              onClose={clearSelection}
+            />
+
+            {activeTab !== "inicio" && (
+              <View
+                style={[
+                  StyleSheet.absoluteFill,
+                  { backgroundColor: theme.colors.background },
+                ]}
+              >
+                {activeTab === "buscar" && (
+                  <SearchScreen
+                    groups={groups}
+                    onSelectGroup={handleSelectGroup}
+                    onBack={() => setActiveTab("inicio")}
+                  />
+                )}
+                {activeTab === "reportar" && (
+                  <ReportScreen
+                    groups={groups}
+                    onBack={() => setActiveTab("inicio")}
+                  />
+                )}
+                {activeTab === "acerca" && (
+                  <AboutScreen onGoToReport={() => setActiveTab("reportar")} />
+                )}
+              </View>
+            )}
+          </View>
+
+          <TabBar active={activeTab} onChange={setActiveTab} />
+        </View>
+      </GestureHandlerRootView>
+    </SafeAreaProvider>
   );
 }
 
 const styles = StyleSheet.create({
   root: {
+    flex: 1,
+  },
+  content: {
     flex: 1,
   },
 });

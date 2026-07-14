@@ -30,13 +30,14 @@ const typography = {
 export const lightTheme = {
   dark: false,
   colors: {
-    background: "#FFFFFF",
+    background: "#F2F4F7", // fondo de pantallas (gris suave, las cards resaltan)
     surface: "#FFFFFF",
     surfaceAlt: "#F3F4F6",
     text: "#111827",
     textMuted: "#6B7280",
     border: "#E5E7EB",
     primary: "#2563EB",
+    textOnPrimary: "#FFFFFF",
     success: "#16A34A",
     overlay: "rgba(0, 0, 0, 0.4)",
     stopFill: "#FFFFFF", // relleno del marcador de parada
@@ -49,16 +50,17 @@ export const lightTheme = {
 export const darkTheme: Theme = {
   dark: true,
   colors: {
-    background: "#111827",
-    surface: "#1F2937",
-    surfaceAlt: "#374151",
+    background: "#0F172A",
+    surface: "#1E293B",
+    surfaceAlt: "#334155",
     text: "#F9FAFB",
-    textMuted: "#9CA3AF",
-    border: "#374151",
+    textMuted: "#94A3B8",
+    border: "#334155",
     primary: "#60A5FA",
+    textOnPrimary: "#0F172A",
     success: "#4ADE80",
     overlay: "rgba(0, 0, 0, 0.6)",
-    stopFill: "#1F2937",
+    stopFill: "#1E293B",
   },
   spacing,
   radii,

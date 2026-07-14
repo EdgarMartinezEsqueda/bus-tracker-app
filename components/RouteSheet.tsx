@@ -1,59 +1,70 @@
 import BottomSheet, {
   BottomSheetFlatList,
-  BottomSheetView,
+  BottomSheetScrollView,
 } from "@gorhom/bottom-sheet";
-import React, { useEffect, useMemo, useRef } from "react";
-import { StyleSheet, Text, View } from "react-native";
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import { Text, View } from "react-native";
 import { useTheme } from "../theme";
-import { Route } from "../types";
+import { Route, RouteGroup } from "../types";
 import RouteDetail from "./RouteDetail";
-import RouteListItem from "./RouteListItem";
+import RouteGroupCard from "./RouteGroupCard";
+import ZoneChips from "./ZoneChips";
 
 interface RouteSheetProps {
-  routes: Route[];
+  groups: RouteGroup[];
+  selectedGroup: RouteGroup | null;
   selectedRoute: Route | null;
-  stopsCountByCode: Map<string, number>;
-  onSelectRoute: (routeId: string) => void;
+  onSelectGroup: (code: string) => void;
+  onSelectVariant: (routeId: string) => void;
   onClose: () => void;
 }
 
 /**
- * Hoja persistente inferior (patrón Google Maps/Transit): colapsada muestra
- * lo esencial, a media altura la lista de rutas, y arriba la lista completa.
- * Con una ruta seleccionada se colapsa para dejar el mapa como protagonista.
+ * Hoja persistente inferior: lista de rutas agrupadas con filtro por zona;
+ * con una ruta seleccionada, detalle con variantes y estadísticas.
  */
 const RouteSheet: React.FC<RouteSheetProps> = ({
-  routes,
+  groups,
+  selectedGroup,
   selectedRoute,
-  stopsCountByCode,
-  onSelectRoute,
+  onSelectGroup,
+  onSelectVariant,
   onClose,
 }) => {
   const theme = useTheme();
   const sheetRef = useRef<BottomSheet>(null);
+  const [zone, setZone] = useState<string | null>(null);
 
-  const snapPoints = useMemo(() => [110, "45%", "88%"], []);
+  const snapPoints = useMemo(() => [120, "45%", "88%"], []);
+
+  const zones = useMemo(
+    () => [...new Set(groups.map((g) => g.zone).filter((z): z is string => !!z))],
+    [groups],
+  );
+
+  const filteredGroups = useMemo(
+    () => (zone ? groups.filter((g) => g.zone === zone) : groups),
+    [groups, zone],
+  );
 
   useEffect(() => {
     // Al seleccionar: colapsar para ver el mapa. Al volver: media altura.
-    sheetRef.current?.snapToIndex(selectedRoute ? 0 : 1);
-  }, [selectedRoute?.id]);
+    sheetRef.current?.snapToIndex(selectedGroup ? 0 : 1);
+  }, [selectedGroup?.code]);
 
   const listHeader = (
-    <View
-      style={{
-        paddingHorizontal: theme.spacing.lg,
-        paddingBottom: theme.spacing.sm,
-      }}
-    >
-      <Text style={[theme.typography.title, { color: theme.colors.text }]}>
-        Rutas de Tepa
-      </Text>
-      <Text
-        style={[theme.typography.caption, { color: theme.colors.textMuted }]}
-      >
-        Elige una ruta para ver su recorrido y paradas
-      </Text>
+    <View style={{ paddingBottom: theme.spacing.sm }}>
+      <View style={{ paddingHorizontal: theme.spacing.lg }}>
+        <Text style={[theme.typography.title, { color: theme.colors.text }]}>
+          Rutas disponibles
+        </Text>
+        <Text
+          style={[theme.typography.caption, { color: theme.colors.textMuted }]}
+        >
+          {groups.length} rutas activas en Tepatitlán
+        </Text>
+      </View>
+      <ZoneChips zones={zones} active={zone} onChange={setZone} />
     </View>
   );
 
@@ -65,21 +76,24 @@ const RouteSheet: React.FC<RouteSheetProps> = ({
       backgroundStyle={{ backgroundColor: theme.colors.surface }}
       handleIndicatorStyle={{ backgroundColor: theme.colors.border }}
     >
-      {selectedRoute ? (
-        <BottomSheetView style={styles.content}>
+      {selectedGroup && selectedRoute ? (
+        <BottomSheetScrollView
+          contentContainerStyle={{ paddingBottom: theme.spacing.xl }}
+        >
           <RouteDetail
-            route={selectedRoute}
-            stopsCount={stopsCountByCode.get(selectedRoute.code) ?? 0}
+            group={selectedGroup}
+            selectedRoute={selectedRoute}
+            onSelectVariant={onSelectVariant}
             onClose={onClose}
           />
-        </BottomSheetView>
+        </BottomSheetScrollView>
       ) : (
         <BottomSheetFlatList
-          data={routes}
-          keyExtractor={(route: Route) => route.id}
+          data={filteredGroups}
+          keyExtractor={(group: RouteGroup) => group.code}
           ListHeaderComponent={listHeader}
-          renderItem={({ item }: { item: Route }) => (
-            <RouteListItem route={item} onPress={onSelectRoute} />
+          renderItem={({ item }: { item: RouteGroup }) => (
+            <RouteGroupCard group={item} onPress={onSelectGroup} />
           )}
           contentContainerStyle={{ paddingBottom: theme.spacing.xl }}
         />
@@ -87,11 +101,5 @@ const RouteSheet: React.FC<RouteSheetProps> = ({
     </BottomSheet>
   );
 };
-
-const styles = StyleSheet.create({
-  content: {
-    flex: 1,
-  },
-});
 
 export default RouteSheet;
