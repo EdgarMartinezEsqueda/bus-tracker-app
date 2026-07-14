@@ -47,7 +47,7 @@ const ReportScreen: React.FC<ReportScreenProps> = ({ groups, onBack }) => {
   };
 
   const handleSubmit = async () => {
-    if (!type || sending) return;
+    if (!type || description.trim() === "" || sending) return;
     if (!isReportingConfigured()) {
       Alert.alert(
         "Envío no disponible",
@@ -112,7 +112,10 @@ const ReportScreen: React.FC<ReportScreenProps> = ({ groups, onBack }) => {
     <KeyboardAvoidingView
       style={[
         styles.screen,
-        { backgroundColor: theme.colors.background, paddingTop: insets.top + 8 },
+        {
+          backgroundColor: theme.colors.background,
+          paddingTop: insets.top + 8,
+        },
       ]}
       behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
@@ -134,7 +137,9 @@ const ReportScreen: React.FC<ReportScreenProps> = ({ groups, onBack }) => {
             <ArrowLeft size={20} color={theme.colors.text} />
           </TouchableOpacity>
           <View>
-            <Text style={[theme.typography.title, { color: theme.colors.text }]}>
+            <Text
+              style={[theme.typography.title, { color: theme.colors.text }]}
+            >
               Reportar problema
             </Text>
             <Text
@@ -149,7 +154,13 @@ const ReportScreen: React.FC<ReportScreenProps> = ({ groups, onBack }) => {
         </View>
 
         {/* Tipo de reporte */}
-        <Text style={[styles.sectionLabel, theme.typography.subtitle, { color: theme.colors.text }]}>
+        <Text
+          style={[
+            styles.sectionLabel,
+            theme.typography.subtitle,
+            { color: theme.colors.text },
+          ]}
+        >
           ¿Qué quieres reportar?
         </Text>
         <View style={{ paddingHorizontal: 16, gap: 8 }}>
@@ -202,7 +213,13 @@ const ReportScreen: React.FC<ReportScreenProps> = ({ groups, onBack }) => {
         </View>
 
         {/* Ruta (opcional) */}
-        <Text style={[styles.sectionLabel, theme.typography.subtitle, { color: theme.colors.text }]}>
+        <Text
+          style={[
+            styles.sectionLabel,
+            theme.typography.subtitle,
+            { color: theme.colors.text },
+          ]}
+        >
           Ruta{" "}
           <Text style={{ color: theme.colors.textMuted, fontWeight: "400" }}>
             (opcional)
@@ -246,11 +263,14 @@ const ReportScreen: React.FC<ReportScreenProps> = ({ groups, onBack }) => {
         </ScrollView>
 
         {/* Descripción */}
-        <Text style={[styles.sectionLabel, theme.typography.subtitle, { color: theme.colors.text }]}>
-          Descripción{" "}
-          <Text style={{ color: theme.colors.textMuted, fontWeight: "400" }}>
-            (opcional)
-          </Text>
+        <Text
+          style={[
+            styles.sectionLabel,
+            theme.typography.subtitle,
+            { color: theme.colors.text },
+          ]}
+        >
+          Descripción
         </Text>
         <View style={{ paddingHorizontal: 16 }}>
           <TextInput
@@ -283,36 +303,44 @@ const ReportScreen: React.FC<ReportScreenProps> = ({ groups, onBack }) => {
 
         {/* Enviar */}
         <View style={{ paddingHorizontal: 16, marginTop: 20 }}>
-          <TouchableOpacity
-            style={[
-              styles.submit,
-              {
-                backgroundColor: type
-                  ? theme.colors.primary
-                  : theme.colors.surfaceAlt,
-              },
-            ]}
-            onPress={handleSubmit}
-            disabled={!type || sending}
-            accessibilityRole="button"
-          >
-            {sending ? (
-              <ActivityIndicator color={theme.colors.textOnPrimary} />
-            ) : (
-              <Text
+          {(() => {
+            // Evaluamos que haya tipo y que la descripción no esté vacía ni tenga puros espacios
+            const isValid = type !== null && description.trim() !== "";
+            const isDisabled = !isValid || sending;
+
+            return (
+              <TouchableOpacity
                 style={[
-                  theme.typography.subtitle,
+                  styles.submit,
                   {
-                    color: type
-                      ? theme.colors.textOnPrimary
-                      : theme.colors.textMuted,
+                    backgroundColor: isValid
+                      ? theme.colors.primary
+                      : theme.colors.surfaceAlt,
                   },
                 ]}
+                onPress={handleSubmit}
+                disabled={isDisabled}
+                accessibilityRole="button"
               >
-                Enviar reporte
-              </Text>
-            )}
-          </TouchableOpacity>
+                {sending ? (
+                  <ActivityIndicator color={theme.colors.textOnPrimary} />
+                ) : (
+                  <Text
+                    style={[
+                      theme.typography.subtitle,
+                      {
+                        color: isValid
+                          ? theme.colors.textOnPrimary
+                          : theme.colors.textMuted,
+                      },
+                    ]}
+                  >
+                    Enviar reporte
+                  </Text>
+                )}
+              </TouchableOpacity>
+            );
+          })()}
         </View>
       </ScrollView>
     </KeyboardAvoidingView>

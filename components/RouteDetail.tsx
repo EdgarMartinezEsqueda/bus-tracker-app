@@ -1,4 +1,4 @@
-import { MapPin, Navigation, Ruler, X } from "lucide-react-native";
+import { MapPin, Navigation, Ruler, Star, X } from "lucide-react-native";
 import React from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { useTheme } from "../theme";
@@ -8,6 +8,8 @@ import { routeLengthKm } from "../utils/geo";
 interface RouteDetailProps {
   group: RouteGroup;
   selectedRoute: Route;
+  isFavorite: boolean;
+  onToggleFavorite: (code: string) => void;
   onSelectVariant: (routeId: string) => void;
   onClose: () => void;
 }
@@ -30,6 +32,8 @@ const variantLabel = (route: Route): string => {
 const RouteDetail: React.FC<RouteDetailProps> = ({
   group,
   selectedRoute,
+  isFavorite,
+  onToggleFavorite,
   onSelectVariant,
   onClose,
 }) => {
@@ -93,6 +97,25 @@ const RouteDetail: React.FC<RouteDetailProps> = ({
             </Text>
           )}
         </View>
+        <TouchableOpacity
+          onPress={() => onToggleFavorite(group.code)}
+          accessibilityRole="button"
+          accessibilityLabel={
+            isFavorite ? "Quitar de favoritas" : "Agregar a favoritas"
+          }
+          accessibilityState={{ selected: isFavorite }}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          style={[
+            styles.closeButton,
+            { backgroundColor: theme.colors.surfaceAlt },
+          ]}
+        >
+          <Star
+            size={18}
+            color={theme.colors.star}
+            fill={isFavorite ? theme.colors.star : "transparent"}
+          />
+        </TouchableOpacity>
         <TouchableOpacity
           onPress={onClose}
           accessibilityRole="button"

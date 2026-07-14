@@ -14,6 +14,7 @@ import {
   STOPS_VISIBLE_MAX_DELTA,
 } from "./constants/map";
 import useBusData from "./hooks/useBusData";
+import useFavorites from "./hooks/useFavorites";
 import useLocation from "./hooks/useLocation";
 import AboutScreen from "./screens/AboutScreen";
 import ReportScreen from "./screens/ReportScreen";
@@ -30,6 +31,7 @@ export default function App() {
   const theme = useTheme();
   const { getPosition } = useLocation();
   const { data } = useBusData();
+  const { favorites, toggleFavorite } = useFavorites();
 
   const mapRef = useRef<MapView>(null);
   const [activeTab, setActiveTab] = useState<TabKey>("inicio");
@@ -161,6 +163,8 @@ export default function App() {
               groups={groups}
               selectedGroup={selectedGroup}
               selectedRoute={selectedRoute}
+              favorites={favorites}
+              onToggleFavorite={toggleFavorite}
               onSelectGroup={handleSelectGroup}
               onSelectVariant={setSelectedRouteId}
               onClose={clearSelection}

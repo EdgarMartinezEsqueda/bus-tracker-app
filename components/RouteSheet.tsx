@@ -14,6 +14,8 @@ interface RouteSheetProps {
   groups: RouteGroup[];
   selectedGroup: RouteGroup | null;
   selectedRoute: Route | null;
+  favorites: string[];
+  onToggleFavorite: (code: string) => void;
   onSelectGroup: (code: string) => void;
   onSelectVariant: (routeId: string) => void;
   onClose: () => void;
@@ -27,6 +29,8 @@ const RouteSheet: React.FC<RouteSheetProps> = ({
   groups,
   selectedGroup,
   selectedRoute,
+  favorites,
+  onToggleFavorite,
   onSelectGroup,
   onSelectVariant,
   onClose,
@@ -42,10 +46,15 @@ const RouteSheet: React.FC<RouteSheetProps> = ({
     [groups],
   );
 
-  const filteredGroups = useMemo(
-    () => (zone ? groups.filter((g) => g.zone === zone) : groups),
-    [groups, zone],
-  );
+  const filteredGroups = useMemo(() => {
+    const list = zone ? groups.filter((g) => g.zone === zone) : groups;
+    // Favoritas primero (sort estable conserva el orden original entre iguales)
+    return [...list].sort(
+      (a, b) =>
+        Number(favorites.includes(b.code)) -
+        Number(favorites.includes(a.code)),
+    );
+  }, [groups, zone, favorites]);
 
   useEffect(() => {
     // Al seleccionar: colapsar para ver el mapa. Al volver: media altura.
@@ -83,6 +92,8 @@ const RouteSheet: React.FC<RouteSheetProps> = ({
           <RouteDetail
             group={selectedGroup}
             selectedRoute={selectedRoute}
+            isFavorite={favorites.includes(selectedGroup.code)}
+            onToggleFavorite={onToggleFavorite}
             onSelectVariant={onSelectVariant}
             onClose={onClose}
           />
@@ -93,7 +104,11 @@ const RouteSheet: React.FC<RouteSheetProps> = ({
           keyExtractor={(group: RouteGroup) => group.code}
           ListHeaderComponent={listHeader}
           renderItem={({ item }: { item: RouteGroup }) => (
-            <RouteGroupCard group={item} onPress={onSelectGroup} />
+            <RouteGroupCard
+              group={item}
+              isFavorite={favorites.includes(item.code)}
+              onPress={onSelectGroup}
+            />
           )}
           contentContainerStyle={{ paddingBottom: theme.spacing.xl }}
         />

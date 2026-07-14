@@ -39,6 +39,7 @@ export const lightTheme = {
     primary: "#2563EB",
     textOnPrimary: "#FFFFFF",
     success: "#16A34A",
+    star: "#F59E0B",
     overlay: "rgba(0, 0, 0, 0.4)",
     stopFill: "#FFFFFF", // relleno del marcador de parada
   },
@@ -59,6 +60,7 @@ export const darkTheme: Theme = {
     primary: "#60A5FA",
     textOnPrimary: "#0F172A",
     success: "#4ADE80",
+    star: "#FBBF24",
     overlay: "rgba(0, 0, 0, 0.6)",
     stopFill: "#1E293B",
   },

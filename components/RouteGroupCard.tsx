@@ -1,4 +1,4 @@
-import { ChevronRight } from "lucide-react-native";
+import { ChevronRight, Star } from "lucide-react-native";
 import React from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { useTheme } from "../theme";
@@ -6,11 +6,16 @@ import { RouteGroup } from "../types";
 
 interface RouteGroupCardProps {
   group: RouteGroup;
+  isFavorite?: boolean;
   onPress: (code: string) => void;
 }
 
 /** Tarjeta "C01 · Central — Hacienda Popotes · 2 variantes · Centro · 67 paradas" */
-const RouteGroupCard: React.FC<RouteGroupCardProps> = ({ group, onPress }) => {
+const RouteGroupCard: React.FC<RouteGroupCardProps> = ({
+  group,
+  isFavorite = false,
+  onPress,
+}) => {
   const theme = useTheme();
 
   const meta = [
@@ -58,6 +63,13 @@ const RouteGroupCard: React.FC<RouteGroupCardProps> = ({ group, onPress }) => {
           {meta}
         </Text>
       </View>
+      {isFavorite && (
+        <Star
+          size={16}
+          color={theme.colors.star}
+          fill={theme.colors.star}
+        />
+      )}
       <View style={[styles.dot, { backgroundColor: group.color }]} />
       <ChevronRight size={18} color={theme.colors.textMuted} />
     </TouchableOpacity>
