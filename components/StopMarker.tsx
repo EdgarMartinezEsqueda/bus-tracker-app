@@ -19,11 +19,14 @@ const StopMarker: React.FC<StopMarkerProps> = ({ stop, color }) => {
   // En Android, congelar tracksViewChanges desde el inicio rasteriza el
   // marcador antes de que la vista hija exista → marcador invisible.
   // Se rastrea brevemente y después se congela para no re-dibujar al mover.
+  // Se repite al cambiar el color (p. ej. al cambiar de variante), porque el
+  // marcador congelado conservaría el color anterior.
   const [tracksChanges, setTracksChanges] = useState(true);
   useEffect(() => {
+    setTracksChanges(true);
     const timer = setTimeout(() => setTracksChanges(false), 500);
     return () => clearTimeout(timer);
-  }, []);
+  }, [color]);
 
   return (
     <Marker

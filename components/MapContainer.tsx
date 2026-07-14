@@ -26,7 +26,6 @@ const MapContainer: React.FC<MapContainerProps> = ({
   onSelectRoute,
 }) => {
   const theme = useTheme();
-  const mutedStroke = theme.dark ? "#4B5563" : "#C7CDD6";
 
   return (
     <MapView
@@ -41,24 +40,27 @@ const MapContainer: React.FC<MapContainerProps> = ({
       toolbarEnabled={false}
       mapPadding={{ top: 0, right: 0, bottom: 96, left: 0 }}
     >
-      {/* Rutas: sin selección todas con su color; con selección, la elegida
-          resaltada y el resto atenuado (pero tocable para cambiar de ruta) */}
-      {routes.map((route) => {
-        const isSelected = route.id === selectedRoute?.id;
-        return (
+      {/* Modo enfoque: con una ruta seleccionada, SOLO se dibuja esa ruta.
+          Sin selección, todas con su color (tocables para seleccionar). */}
+      {selectedRoute ? (
+        <Polyline
+          coordinates={selectedRoute.coordinates}
+          strokeColor={selectedRoute.color}
+          strokeWidth={5}
+          zIndex={1}
+        />
+      ) : (
+        routes.map((route) => (
           <Polyline
             key={route.id}
             coordinates={route.coordinates}
-            strokeColor={
-              !selectedRoute || isSelected ? route.color : mutedStroke
-            }
-            strokeWidth={isSelected ? 5 : selectedRoute ? 2 : 3}
-            zIndex={isSelected ? 1 : 0}
+            strokeColor={route.color}
+            strokeWidth={3}
             tappable={true}
             onPress={() => onSelectRoute(route.id)}
           />
-        );
-      })}
+        ))
+      )}
 
       {/* Sentido del recorrido de la ruta seleccionada */}
       {selectedRoute && <DirectionArrows route={selectedRoute} />}

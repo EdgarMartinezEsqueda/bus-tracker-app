@@ -1,62 +1,76 @@
-import { MapPin, Navigation, Ruler, Star, X } from "lucide-react-native";
+import { Clock, Flag, MapPin, Ruler, Star } from "lucide-react-native";
 import React from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { useTheme } from "../theme";
-import { Route, RouteGroup } from "../types";
-import { routeLengthKm } from "../utils/geo";
+import { BusStop, Route, RouteGroup } from "../types";
+import { routeLengthKm, StopAlongRoute } from "../utils/geo";
+import StopTimeline from "./StopTimeline";
 
 interface RouteDetailProps {
   group: RouteGroup;
   selectedRoute: Route;
+  stopsAlong: StopAlongRoute<BusStop>[];
   isFavorite: boolean;
   onToggleFavorite: (code: string) => void;
   onSelectVariant: (routeId: string) => void;
-  onClose: () => void;
+  onFocusStop: (stop: BusStop) => void;
 }
 
-const variantLabel = (route: Route): string => {
+const AVG_BUS_SPEED_KMH = 17; // urbano con paradas
+
+const variantChipLabel = (route: Route): string => {
   const direction =
     route.direction === "ida"
       ? "Ida"
       : route.direction === "vuelta"
         ? "Vuelta"
         : null;
-  const parts = [
-    direction,
-    route.variant ? `(${route.variant})` : null,
-    route.headsign ? `→ ${route.headsign}` : null,
-  ].filter(Boolean);
-  return parts.length ? parts.join(" ") : route.name;
+  if (route.variant && direction) return `${route.variant} · ${direction}`;
+  if (direction) return direction;
+  return route.headsign ?? route.name;
+};
+
+const buildDescription = (group: RouteGroup, zone: string | null): string => {
+  const parts = group.name.split(" — ");
+  if (parts.length === 2) {
+    return `Conecta ${parts[0]} con ${parts[1]}${
+      zone ? ` por la zona ${zone}` : ""
+    } de Tepatitlán.`;
+  }
+  return `Recorrido por la zona ${zone ?? "urbana"} de Tepatitlán.`;
 };
 
 const RouteDetail: React.FC<RouteDetailProps> = ({
   group,
   selectedRoute,
+  stopsAlong,
   isFavorite,
   onToggleFavorite,
   onSelectVariant,
-  onClose,
+  onFocusStop,
 }) => {
   const theme = useTheme();
   const lengthKm = routeLengthKm(selectedRoute.coordinates);
+  const minutes = Math.max(5, Math.round((lengthKm / AVG_BUS_SPEED_KMH) * 60));
 
-  const stats = [
+  const metaChips = [
     {
-      icon: <Ruler size={18} color={theme.colors.textMuted} />,
-      value: `${lengthKm.toFixed(1)} km`,
-      label: "Recorrido",
+      icon: <Clock size={14} color={theme.colors.textMuted} />,
+      label: `~${minutes} min`,
     },
     {
-      icon: <MapPin size={18} color={theme.colors.textMuted} />,
-      value: String(group.stopsCount),
-      label: "Paradas",
+      icon: <MapPin size={14} color={theme.colors.textMuted} />,
+      label: `${stopsAlong.length} paradas`,
     },
-    ...(selectedRoute.direction
+    {
+      icon: <Ruler size={14} color={theme.colors.textMuted} />,
+      label: `${lengthKm.toFixed(1)} km`,
+    },
+    ...(group.zone
       ? [
           {
-            icon: <Navigation size={18} color={theme.colors.textMuted} />,
-            value: selectedRoute.direction === "ida" ? "Ida" : "Vuelta",
-            label: "Sentido",
+            icon: <Flag size={14} color={theme.colors.textMuted} />,
+            label: group.zone,
           },
         ]
       : []),
@@ -82,20 +96,10 @@ const RouteDetail: React.FC<RouteDetailProps> = ({
         <View style={styles.headerTexts}>
           <Text
             style={[theme.typography.title, { color: theme.colors.text }]}
-            numberOfLines={1}
+            numberOfLines={2}
           >
             {group.name}
           </Text>
-          {group.zone && (
-            <Text
-              style={[
-                theme.typography.caption,
-                { color: theme.colors.textMuted },
-              ]}
-            >
-              Zona {group.zone}
-            </Text>
-          )}
         </View>
         <TouchableOpacity
           onPress={() => onToggleFavorite(group.code)}
@@ -106,7 +110,7 @@ const RouteDetail: React.FC<RouteDetailProps> = ({
           accessibilityState={{ selected: isFavorite }}
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           style={[
-            styles.closeButton,
+            styles.starButton,
             { backgroundColor: theme.colors.surfaceAlt },
           ]}
         >
@@ -116,116 +120,89 @@ const RouteDetail: React.FC<RouteDetailProps> = ({
             fill={isFavorite ? theme.colors.star : "transparent"}
           />
         </TouchableOpacity>
-        <TouchableOpacity
-          onPress={onClose}
-          accessibilityRole="button"
-          accessibilityLabel="Cerrar detalle de ruta"
-          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-          style={[
-            styles.closeButton,
-            { backgroundColor: theme.colors.surfaceAlt },
-          ]}
-        >
-          <X size={18} color={theme.colors.textMuted} />
-        </TouchableOpacity>
-      </View>
-
-      {/* Variantes (ida/vuelta/ramales) */}
-      {group.variants.length > 1 && (
-        <View style={{ marginTop: theme.spacing.md, gap: 8 }}>
-          {group.variants.map((variant) => {
-            const isSelected = variant.id === selectedRoute.id;
-            return (
-              <TouchableOpacity
-                key={variant.id}
-                style={[
-                  styles.variantRow,
-                  {
-                    borderColor: isSelected
-                      ? theme.colors.primary
-                      : theme.colors.border,
-                    backgroundColor: isSelected
-                      ? `${group.color}11`
-                      : theme.colors.surface,
-                    borderRadius: theme.radii.sm,
-                  },
-                ]}
-                onPress={() => onSelectVariant(variant.id)}
-                accessibilityRole="radio"
-                accessibilityState={{ selected: isSelected }}
-              >
-                <View
-                  style={[
-                    styles.radio,
-                    {
-                      borderColor: isSelected
-                        ? theme.colors.primary
-                        : theme.colors.textMuted,
-                    },
-                  ]}
-                >
-                  {isSelected && (
-                    <View
-                      style={[
-                        styles.radioInner,
-                        { backgroundColor: theme.colors.primary },
-                      ]}
-                    />
-                  )}
-                </View>
-                <Text
-                  style={[theme.typography.body, { color: theme.colors.text }]}
-                  numberOfLines={1}
-                >
-                  {variantLabel(variant)}
-                </Text>
-              </TouchableOpacity>
-            );
-          })}
-        </View>
-      )}
-
-      {/* Stats */}
-      <View
-        style={[
-          styles.statsRow,
-          {
-            backgroundColor: theme.colors.surfaceAlt,
-            borderRadius: theme.radii.md,
-            marginTop: theme.spacing.md,
-            paddingVertical: theme.spacing.md,
-          },
-        ]}
-      >
-        {stats.map((stat) => (
-          <View key={stat.label} style={styles.stat}>
-            {stat.icon}
-            <Text
-              style={[theme.typography.subtitle, { color: theme.colors.text }]}
-            >
-              {stat.value}
-            </Text>
-            <Text
-              style={[
-                theme.typography.caption,
-                { color: theme.colors.textMuted },
-              ]}
-            >
-              {stat.label}
-            </Text>
-          </View>
-        ))}
       </View>
 
       <Text
         style={[
           theme.typography.caption,
-          { color: theme.colors.textMuted, marginTop: theme.spacing.md },
+          { color: theme.colors.textMuted, marginTop: 4 },
         ]}
       >
-        Acércate al mapa para ver las paradas. Las flechas indican el sentido
-        del recorrido.
+        {buildDescription(group, group.zone)}
       </Text>
+
+      {/* Meta chips */}
+      <View style={styles.metaRow}>
+        {metaChips.map((chip) => (
+          <View
+            key={chip.label}
+            style={[styles.metaChip, { backgroundColor: theme.colors.surfaceAlt }]}
+          >
+            {chip.icon}
+            <Text
+              style={[theme.typography.caption, { color: theme.colors.text }]}
+            >
+              {chip.label}
+            </Text>
+          </View>
+        ))}
+      </View>
+
+      {/* Variantes */}
+      {group.variants.length > 1 && (
+        <>
+          <Text style={[styles.sectionLabel, { color: theme.colors.textMuted }]}>
+            VARIANTE
+          </Text>
+          <View style={styles.variantRow}>
+            {group.variants.map((variant) => {
+              const isSelected = variant.id === selectedRoute.id;
+              return (
+                <TouchableOpacity
+                  key={variant.id}
+                  style={[
+                    styles.variantChip,
+                    {
+                      backgroundColor: isSelected
+                        ? theme.colors.primary
+                        : theme.colors.surface,
+                      borderColor: isSelected
+                        ? theme.colors.primary
+                        : theme.colors.border,
+                    },
+                  ]}
+                  onPress={() => onSelectVariant(variant.id)}
+                  accessibilityRole="radio"
+                  accessibilityState={{ selected: isSelected }}
+                >
+                  <Text
+                    style={[
+                      styles.variantChipText,
+                      {
+                        color: isSelected
+                          ? theme.colors.textOnPrimary
+                          : theme.colors.text,
+                      },
+                    ]}
+                  >
+                    {variantChipLabel(variant)}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        </>
+      )}
+
+      {/* Paradas */}
+      <Text style={[styles.sectionLabel, { color: theme.colors.textMuted }]}>
+        PARADAS · {stopsAlong.length} EN TOTAL
+      </Text>
+      <StopTimeline
+        stops={stopsAlong}
+        color={group.color}
+        onFocusStop={onFocusStop}
+      />
     </View>
   );
 };
@@ -248,43 +225,49 @@ const styles = StyleSheet.create({
   },
   headerTexts: {
     flex: 1,
-    gap: 2,
   },
-  closeButton: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+  starButton: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
     justifyContent: "center",
     alignItems: "center",
+  },
+  metaRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+    marginTop: 12,
+  },
+  metaChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 999,
+  },
+  sectionLabel: {
+    fontSize: 11,
+    fontWeight: "800",
+    letterSpacing: 0.8,
+    marginTop: 18,
+    marginBottom: 10,
   },
   variantRow: {
     flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 11,
+    flexWrap: "wrap",
+    gap: 8,
+  },
+  variantChip: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 999,
     borderWidth: 1,
   },
-  radio: {
-    width: 18,
-    height: 18,
-    borderRadius: 9,
-    borderWidth: 2,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  radioInner: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-  },
-  statsRow: {
-    flexDirection: "row",
-  },
-  stat: {
-    flex: 1,
-    alignItems: "center",
-    gap: 4,
+  variantChipText: {
+    fontSize: 13,
+    fontWeight: "700",
   },
 });
 

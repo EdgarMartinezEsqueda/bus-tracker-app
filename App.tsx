@@ -5,6 +5,7 @@ import MapView from "react-native-maps";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import LocateButton from "./components/LocateButton";
 import MapContainer from "./components/MapContainer";
+import RouteHeaderPill from "./components/RouteHeaderPill";
 import RouteSheet from "./components/RouteSheet";
 import SearchPill from "./components/SearchPill";
 import TabBar, { TabKey } from "./components/TabBar";
@@ -20,12 +21,13 @@ import AboutScreen from "./screens/AboutScreen";
 import ReportScreen from "./screens/ReportScreen";
 import SearchScreen from "./screens/SearchScreen";
 import { useTheme } from "./theme";
-import { MapRegion } from "./types";
+import { BusStop, MapRegion } from "./types";
+import { stopsAlongRoute } from "./utils/geo";
 import { getVisibleStops } from "./utils/mapUtils";
 import { buildRouteGroups } from "./utils/routeGroups";
 
-// Margen al encuadrar una ruta: el inferior deja espacio al bottom sheet
-const FIT_ROUTE_PADDING = { top: 100, right: 60, bottom: 220, left: 60 };
+// Margen al encuadrar una ruta: el inferior deja espacio al sheet a media altura
+const FIT_ROUTE_PADDING = { top: 110, right: 60, bottom: 330, left: 60 };
 
 export default function App() {
   const theme = useTheme();
@@ -84,15 +86,36 @@ export default function App() {
     [data],
   );
 
-  // Paradas de la ruta seleccionada, visibles solo con zoom suficiente
-  const visibleStops = useMemo(() => {
+  // Paradas de la variante seleccionada, ordenadas a lo largo del recorrido
+  // (excluye las de la variante contraria, que quedan lejos del trazo)
+  const stopsAlong = useMemo(() => {
     if (!selectedRoute) return [];
-    if (mapRegion.latitudeDelta > STOPS_VISIBLE_MAX_DELTA) return [];
-    const routeStops = data.stops.filter((stop) =>
+    const familyStops = data.stops.filter((stop) =>
       stop.routeCodes.includes(selectedRoute.code),
     );
-    return getVisibleStops(routeStops, mapRegion);
-  }, [data, selectedRoute, mapRegion]);
+    return stopsAlongRoute(selectedRoute.coordinates, familyStops);
+  }, [data, selectedRoute]);
+
+  // En el mapa, visibles solo con zoom suficiente y dentro del viewport
+  const visibleStops = useMemo(() => {
+    if (mapRegion.latitudeDelta > STOPS_VISIBLE_MAX_DELTA) return [];
+    return getVisibleStops(
+      stopsAlong.map((s) => s.stop),
+      mapRegion,
+    );
+  }, [stopsAlong, mapRegion]);
+
+  const handleFocusStop = useCallback((stop: BusStop) => {
+    mapRef.current?.animateToRegion(
+      {
+        latitude: stop.latitude,
+        longitude: stop.longitude,
+        latitudeDelta: 0.008,
+        longitudeDelta: 0.008,
+      },
+      500,
+    );
+  }, []);
 
   // Encuadrar la variante seleccionada con animación
   useEffect(() => {
@@ -156,18 +179,23 @@ export default function App() {
               onSelectRoute={handleSelectRouteFromMap}
             />
 
-            <SearchPill onPress={() => setActiveTab("buscar")} />
+            {selectedGroup ? (
+              <RouteHeaderPill group={selectedGroup} onBack={clearSelection} />
+            ) : (
+              <SearchPill onPress={() => setActiveTab("buscar")} />
+            )}
             <LocateButton onPress={handleLocate} />
 
             <RouteSheet
               groups={groups}
               selectedGroup={selectedGroup}
               selectedRoute={selectedRoute}
+              stopsAlong={stopsAlong}
               favorites={favorites}
               onToggleFavorite={toggleFavorite}
               onSelectGroup={handleSelectGroup}
               onSelectVariant={setSelectedRouteId}
-              onClose={clearSelection}
+              onFocusStop={handleFocusStop}
             />
 
             {activeTab !== "inicio" && (

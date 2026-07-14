@@ -5,7 +5,8 @@ import BottomSheet, {
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Text, View } from "react-native";
 import { useTheme } from "../theme";
-import { Route, RouteGroup } from "../types";
+import { BusStop, Route, RouteGroup } from "../types";
+import { StopAlongRoute } from "../utils/geo";
 import RouteDetail from "./RouteDetail";
 import RouteGroupCard from "./RouteGroupCard";
 import ZoneChips from "./ZoneChips";
@@ -14,11 +15,12 @@ interface RouteSheetProps {
   groups: RouteGroup[];
   selectedGroup: RouteGroup | null;
   selectedRoute: Route | null;
+  stopsAlong: StopAlongRoute<BusStop>[];
   favorites: string[];
   onToggleFavorite: (code: string) => void;
   onSelectGroup: (code: string) => void;
   onSelectVariant: (routeId: string) => void;
-  onClose: () => void;
+  onFocusStop: (stop: BusStop) => void;
 }
 
 /**
@@ -29,11 +31,12 @@ const RouteSheet: React.FC<RouteSheetProps> = ({
   groups,
   selectedGroup,
   selectedRoute,
+  stopsAlong,
   favorites,
   onToggleFavorite,
   onSelectGroup,
   onSelectVariant,
-  onClose,
+  onFocusStop,
 }) => {
   const theme = useTheme();
   const sheetRef = useRef<BottomSheet>(null);
@@ -57,9 +60,15 @@ const RouteSheet: React.FC<RouteSheetProps> = ({
   }, [groups, zone, favorites]);
 
   useEffect(() => {
-    // Al seleccionar: colapsar para ver el mapa. Al volver: media altura.
-    sheetRef.current?.snapToIndex(selectedGroup ? 0 : 1);
+    // Detalle y lista abren a media altura: mapa arriba, contenido abajo
+    sheetRef.current?.snapToIndex(1);
   }, [selectedGroup?.code]);
+
+  const handleFocusStop = (stop: BusStop) => {
+    // Colapsar para que la parada enfocada sea visible en el mapa
+    sheetRef.current?.snapToIndex(0);
+    onFocusStop(stop);
+  };
 
   const listHeader = (
     <View style={{ paddingBottom: theme.spacing.sm }}>
@@ -92,10 +101,11 @@ const RouteSheet: React.FC<RouteSheetProps> = ({
           <RouteDetail
             group={selectedGroup}
             selectedRoute={selectedRoute}
+            stopsAlong={stopsAlong}
             isFavorite={favorites.includes(selectedGroup.code)}
             onToggleFavorite={onToggleFavorite}
             onSelectVariant={onSelectVariant}
-            onClose={onClose}
+            onFocusStop={handleFocusStop}
           />
         </BottomSheetScrollView>
       ) : (
