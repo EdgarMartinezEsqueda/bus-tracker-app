@@ -31,9 +31,11 @@ La app lo consume en tres niveles (siempre gana el más reciente según `metadat
 
 ### Para modificar una ruta o parada
 
-1. Abrir `data/routes.geojson` en [geojson.io](https://geojson.io) (o QGIS) y editar visualmente. Para nombrar una parada, editar su `properties.name`.
-2. Correr `npm run data:update` — valida el esquema (detecta si el editor rompió algo), sella `metadata.generatedAt` y sincroniza la copia embebida `assets/routes.json`.
+1. Abrir `data/routes.geojson` en [geojson.io](https://geojson.io) (o QGIS) y editar visualmente. Para nombrar una parada, editar su `properties.name`. **Al agregar una ruta**: darle `id` único (p. ej. `c05-ida`) y sus `properties` (`code`, `direction`, `headsign`, `color`, `zone`).
+2. Correr `npm run data:update` — valida el esquema (detecta ids duplicados, propiedades faltantes o si el editor rompió algo), sella `metadata.generatedAt` **(sin este sello los clientes ignoran el cambio)** y sincroniza la copia embebida `assets/routes.json`.
 3. Commit + push a `main`. Los usuarios reciben el cambio al reabrir la app.
+
+> Red de seguridad: el workflow [`update-data.yml`](.github/workflows/update-data.yml) corre la validación y el sellado automáticamente en cada push que toque `data/routes.geojson`, por si se edita desde la web de GitHub sin correr el paso 2. Si la validación falla, el Action marca ❌ en GitHub — revisar el log.
 
 > `data/buses.json` y `scripts/buildGeojson.js` son el registro de la migración original (My Maps → KML → GeoJSON) y ya no forman parte del flujo normal.
 
