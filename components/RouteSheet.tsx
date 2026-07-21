@@ -3,7 +3,7 @@ import BottomSheet, {
   BottomSheetScrollView,
 } from "@gorhom/bottom-sheet";
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { Text, View } from "react-native";
+import { FlatList, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useTheme } from "../theme";
 import { BusStop, Route, RouteGroup } from "../types";
 import { StopAlongRoute } from "../utils/geo";
@@ -21,11 +21,16 @@ interface RouteSheetProps {
   onSelectGroup: (code: string) => void;
   onSelectVariant: (routeId: string) => void;
   onFocusStop: (stop: BusStop) => void;
+  /** "sheet": hoja arrastrable sobre el mapa (móvil). "panel": columna fija
+   * siempre visible (escritorio/web ancho) — ver App.tsx. Por defecto "sheet". */
+  variant?: "sheet" | "panel";
 }
 
 /**
- * Hoja persistente inferior: lista de rutas agrupadas con filtro por zona;
- * con una ruta seleccionada, detalle con variantes y estadísticas.
+ * Lista de rutas agrupadas con filtro por zona; con una ruta seleccionada,
+ * detalle con variantes y estadísticas. En "sheet" vive dentro de un
+ * @gorhom/bottom-sheet arrastrable; en "panel" es una columna fija sin
+ * gestos, por lo que el scroll usa los componentes normales de RN.
  */
 const RouteSheet: React.FC<RouteSheetProps> = ({
   groups,
@@ -37,10 +42,12 @@ const RouteSheet: React.FC<RouteSheetProps> = ({
   onSelectGroup,
   onSelectVariant,
   onFocusStop,
+  variant = "sheet",
 }) => {
   const theme = useTheme();
   const sheetRef = useRef<BottomSheet>(null);
   const [zone, setZone] = useState<string | null>(null);
+  const isPanel = variant === "panel";
 
   const snapPoints = useMemo(() => [120, "45%", "88%"], []);
 
@@ -61,12 +68,13 @@ const RouteSheet: React.FC<RouteSheetProps> = ({
 
   useEffect(() => {
     // Detalle y lista abren a media altura: mapa arriba, contenido abajo
-    sheetRef.current?.snapToIndex(1);
-  }, [selectedGroup?.code]);
+    // (el panel de escritorio no tiene snap points, siempre está abierto)
+    if (!isPanel) sheetRef.current?.snapToIndex(1);
+  }, [selectedGroup?.code, isPanel]);
 
   const handleFocusStop = (stop: BusStop) => {
     // Colapsar para que la parada enfocada sea visible en el mapa
-    sheetRef.current?.snapToIndex(0);
+    if (!isPanel) sheetRef.current?.snapToIndex(0);
     onFocusStop(stop);
   };
 
@@ -86,6 +94,56 @@ const RouteSheet: React.FC<RouteSheetProps> = ({
     </View>
   );
 
+  // El panel fijo no tiene gestos de arrastre: ScrollView/FlatList normales
+  // bastan. Se tipan como `any` porque BottomSheetScrollView/FlatList añaden
+  // props propias que no unifican con las de RN al elegir el componente en
+  // tiempo de ejecución; ambos pares aceptan las props usadas abajo.
+  const ScrollContainer: React.ComponentType<any> = isPanel
+    ? ScrollView
+    : BottomSheetScrollView;
+  const ListContainer: React.ComponentType<any> = isPanel
+    ? FlatList
+    : BottomSheetFlatList;
+
+  const body =
+    selectedGroup && selectedRoute ? (
+      <ScrollContainer
+        contentContainerStyle={{ paddingBottom: theme.spacing.xl }}
+      >
+        <RouteDetail
+          group={selectedGroup}
+          selectedRoute={selectedRoute}
+          stopsAlong={stopsAlong}
+          isFavorite={favorites.includes(selectedGroup.code)}
+          onToggleFavorite={onToggleFavorite}
+          onSelectVariant={onSelectVariant}
+          onFocusStop={handleFocusStop}
+        />
+      </ScrollContainer>
+    ) : (
+      <ListContainer
+        data={filteredGroups}
+        keyExtractor={(group: RouteGroup) => group.code}
+        ListHeaderComponent={listHeader}
+        renderItem={({ item }: { item: RouteGroup }) => (
+          <RouteGroupCard
+            group={item}
+            isFavorite={favorites.includes(item.code)}
+            onPress={onSelectGroup}
+          />
+        )}
+        contentContainerStyle={{ paddingBottom: theme.spacing.xl }}
+      />
+    );
+
+  if (isPanel) {
+    return (
+      <View style={[styles.panel, { backgroundColor: theme.colors.surface }]}>
+        {body}
+      </View>
+    );
+  }
+
   return (
     <BottomSheet
       ref={sheetRef}
@@ -94,37 +152,15 @@ const RouteSheet: React.FC<RouteSheetProps> = ({
       backgroundStyle={{ backgroundColor: theme.colors.surface }}
       handleIndicatorStyle={{ backgroundColor: theme.colors.border }}
     >
-      {selectedGroup && selectedRoute ? (
-        <BottomSheetScrollView
-          contentContainerStyle={{ paddingBottom: theme.spacing.xl }}
-        >
-          <RouteDetail
-            group={selectedGroup}
-            selectedRoute={selectedRoute}
-            stopsAlong={stopsAlong}
-            isFavorite={favorites.includes(selectedGroup.code)}
-            onToggleFavorite={onToggleFavorite}
-            onSelectVariant={onSelectVariant}
-            onFocusStop={handleFocusStop}
-          />
-        </BottomSheetScrollView>
-      ) : (
-        <BottomSheetFlatList
-          data={filteredGroups}
-          keyExtractor={(group: RouteGroup) => group.code}
-          ListHeaderComponent={listHeader}
-          renderItem={({ item }: { item: RouteGroup }) => (
-            <RouteGroupCard
-              group={item}
-              isFavorite={favorites.includes(item.code)}
-              onPress={onSelectGroup}
-            />
-          )}
-          contentContainerStyle={{ paddingBottom: theme.spacing.xl }}
-        />
-      )}
+      {body}
     </BottomSheet>
   );
 };
+
+const styles = StyleSheet.create({
+  panel: {
+    flex: 1,
+  },
+});
 
 export default RouteSheet;

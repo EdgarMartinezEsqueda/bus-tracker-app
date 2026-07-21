@@ -1,10 +1,15 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { BackHandler, StyleSheet, View } from "react-native";
+import {
+  BackHandler,
+  StyleSheet,
+  useWindowDimensions,
+  View,
+} from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
-import MapView from "react-native-maps";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import LocateButton from "./components/LocateButton";
 import MapContainer from "./components/MapContainer";
+import { MapHandle } from "./components/MapContainer.types";
 import RouteHeaderPill from "./components/RouteHeaderPill";
 import RouteSheet from "./components/RouteSheet";
 import SearchPill from "./components/SearchPill";
@@ -29,13 +34,18 @@ import { buildRouteGroups } from "./utils/routeGroups";
 // Margen al encuadrar una ruta: el inferior deja espacio al sheet a media altura
 const FIT_ROUTE_PADDING = { top: 110, right: 60, bottom: 330, left: 60 };
 
+// Desde aquí el layout pasa de bottom sheet a panel lateral fijo (escritorio/web)
+const WIDE_LAYOUT_MIN_WIDTH = 900;
+
 export default function App() {
   const theme = useTheme();
   const { getPosition } = useLocation();
   const { data } = useBusData();
   const { favorites, toggleFavorite } = useFavorites();
+  const { width } = useWindowDimensions();
+  const isWideLayout = width >= WIDE_LAYOUT_MIN_WIDTH;
 
-  const mapRef = useRef<MapView>(null);
+  const mapRef = useRef<MapHandle>(null);
   const [activeTab, setActiveTab] = useState<TabKey>("inicio");
   const [selectedGroupCode, setSelectedGroupCode] = useState<string | null>(
     null,
@@ -170,33 +180,68 @@ export default function App() {
         >
           {/* Área de contenido (mapa + sheet, con overlays por pestaña) */}
           <View style={styles.content}>
-            <MapContainer
-              mapRef={mapRef}
-              routes={data.routes}
-              selectedRoute={selectedRoute}
-              visibleStops={visibleStops}
-              onRegionChangeComplete={setMapRegion}
-              onSelectRoute={handleSelectRouteFromMap}
-            />
+            <View style={[styles.body, isWideLayout && styles.bodyRow]}>
+              {/* Mapa + overlays flotantes: aquí anclan los "position: absolute" */}
+              <View style={styles.mapArea}>
+                <MapContainer
+                  ref={mapRef}
+                  routes={data.routes}
+                  selectedRoute={selectedRoute}
+                  visibleStops={visibleStops}
+                  onRegionChangeComplete={setMapRegion}
+                  onSelectRoute={handleSelectRouteFromMap}
+                />
 
-            {selectedGroup ? (
-              <RouteHeaderPill group={selectedGroup} onBack={clearSelection} />
-            ) : (
-              <SearchPill onPress={() => setActiveTab("buscar")} />
-            )}
-            <LocateButton onPress={handleLocate} />
+                {selectedGroup ? (
+                  <RouteHeaderPill
+                    group={selectedGroup}
+                    onBack={clearSelection}
+                  />
+                ) : (
+                  <SearchPill onPress={() => setActiveTab("buscar")} />
+                )}
+                <LocateButton onPress={handleLocate} />
 
-            <RouteSheet
-              groups={groups}
-              selectedGroup={selectedGroup}
-              selectedRoute={selectedRoute}
-              stopsAlong={stopsAlong}
-              favorites={favorites}
-              onToggleFavorite={toggleFavorite}
-              onSelectGroup={handleSelectGroup}
-              onSelectVariant={setSelectedRouteId}
-              onFocusStop={handleFocusStop}
-            />
+                {/* Móvil: hoja arrastrable superpuesta al mapa */}
+                {!isWideLayout && (
+                  <RouteSheet
+                    variant="sheet"
+                    groups={groups}
+                    selectedGroup={selectedGroup}
+                    selectedRoute={selectedRoute}
+                    stopsAlong={stopsAlong}
+                    favorites={favorites}
+                    onToggleFavorite={toggleFavorite}
+                    onSelectGroup={handleSelectGroup}
+                    onSelectVariant={setSelectedRouteId}
+                    onFocusStop={handleFocusStop}
+                  />
+                )}
+              </View>
+
+              {/* Escritorio/web ancho: panel fijo a la derecha, mapa a la izquierda */}
+              {isWideLayout && (
+                <View
+                  style={[
+                    styles.sidePanel,
+                    { borderLeftColor: theme.colors.border },
+                  ]}
+                >
+                  <RouteSheet
+                    variant="panel"
+                    groups={groups}
+                    selectedGroup={selectedGroup}
+                    selectedRoute={selectedRoute}
+                    stopsAlong={stopsAlong}
+                    favorites={favorites}
+                    onToggleFavorite={toggleFavorite}
+                    onSelectGroup={handleSelectGroup}
+                    onSelectVariant={setSelectedRouteId}
+                    onFocusStop={handleFocusStop}
+                  />
+                </View>
+              )}
+            </View>
 
             {activeTab !== "inicio" && (
               <View
@@ -232,11 +277,26 @@ export default function App() {
   );
 }
 
+const SIDE_PANEL_WIDTH = 400;
+
 const styles = StyleSheet.create({
   root: {
     flex: 1,
   },
   content: {
     flex: 1,
+  },
+  body: {
+    flex: 1,
+  },
+  bodyRow: {
+    flexDirection: "row",
+  },
+  mapArea: {
+    flex: 1,
+  },
+  sidePanel: {
+    width: SIDE_PANEL_WIDTH,
+    borderLeftWidth: StyleSheet.hairlineWidth,
   },
 });

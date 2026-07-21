@@ -80,7 +80,31 @@ EXPO_PUBLIC_SUPABASE_ANON_KEY=eyJ...
 ```bash
 npm run android        # compila el APK de debug y lo instala en el dispositivo/emulador
 npx expo start --dev-client   # solo el servidor Metro (si la app ya está instalada)
+npm run web            # versión web en el navegador (localhost:8081)
 ```
+
+## Web (GitHub Pages)
+
+La app es universal: en iOS/Android el mapa usa `react-native-maps` (Google
+Maps) y en web usa Leaflet + OpenStreetMap — sin API key. Metro elige la
+implementación por plataforma (`components/MapContainer.tsx` vs
+`MapContainer.web.tsx`); ambas exponen el mismo `MapHandle`. En pantallas
+anchas (≥900 px) el layout cambia a panel lateral + mapa; en móvil se conserva
+el bottom sheet.
+
+```bash
+npm run build:web                                    # export local (dist/)
+EXPO_BASE_URL=/bus-tracker-app npm run build:web     # export para GitHub Pages
+```
+
+El deploy es automático: `.github/workflows/deploy-web.yml` exporta y publica
+en Pages en cada push a `main`. Requiere una única configuración inicial:
+
+1. **Settings → Pages → Source: "GitHub Actions"**.
+2. (Opcional, para el buzón de reportes) **Settings → Secrets → Actions**:
+   añadir `EXPO_PUBLIC_SUPABASE_URL` y `EXPO_PUBLIC_SUPABASE_ANON_KEY`.
+
+La app queda en `https://<usuario>.github.io/bus-tracker-app/`.
 
 ### Problemas conocidos (Windows)
 

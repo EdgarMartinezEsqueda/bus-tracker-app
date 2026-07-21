@@ -37,6 +37,15 @@ export default () => ({
     },
     web: {
       favicon: "./assets/icon.png",
+      bundler: "metro",
+      // SPA: un solo index.html; suficiente porque la app no usa rutas de URL
+      output: "single",
+    },
+    experiments: {
+      // Subruta para GitHub Pages (https://<usuario>.github.io/bus-tracker-app).
+      // Vacío en desarrollo local; el workflow de deploy exporta con
+      // EXPO_BASE_URL=/bus-tracker-app
+      baseUrl: process.env.EXPO_BASE_URL ?? "",
     },
     extra: {
       eas: {
