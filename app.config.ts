@@ -26,7 +26,6 @@ export default () => ({
         backgroundColor: "#427df1",
       },
       permissions: ["ACCESS_COARSE_LOCATION", "ACCESS_FINE_LOCATION"],
-      edgeToEdgeEnabled: true,
       predictiveBackGestureEnabled: false,
       package: "com.tepaBuses",
       config: {
