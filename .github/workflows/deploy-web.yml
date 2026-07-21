@@ -1,0 +1,59 @@
+# Exporta la versión web (Expo) y la publica en GitHub Pages en cada push a
+# main. Requiere activar Pages con fuente "GitHub Actions" en los ajustes del
+# repo, y los secrets EXPO_PUBLIC_SUPABASE_URL / EXPO_PUBLIC_SUPABASE_ANON_KEY
+# para que el buzón de reportes funcione en web (la anon key es pública por
+# diseño: la tabla tiene RLS insert-only).
+name: Deploy web to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - name: Export web bundle
+        run: npx expo export --platform web
+        env:
+          # La app se sirve en https://<usuario>.github.io/bus-tracker-app/
+          EXPO_BASE_URL: /bus-tracker-app
+          EXPO_PUBLIC_SUPABASE_URL: ${{ secrets.EXPO_PUBLIC_SUPABASE_URL }}
+          EXPO_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.EXPO_PUBLIC_SUPABASE_ANON_KEY }}
+
+      # Sin esto, Pages (Jekyll) ignora los directorios que empiezan con _
+      # como _expo/, donde vive el bundle JS
+      - run: touch dist/.nojekyll
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
